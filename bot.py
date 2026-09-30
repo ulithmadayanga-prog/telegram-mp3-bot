@@ -1,7 +1,24 @@
 import os
 import asyncio
 import yt_dlp
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
+
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"OK")
+
+    def log_message(self, format, *args):
+        pass
+
+
+def start_health_server():
+    port = int(os.environ.get("PORT", "10000"))
+    server = HTTPServer(("0.0.0.0", port), HealthHandler)
+    server.serve_forever()
 from telegram import Update
 from telegram.ext import (
     Application,
@@ -69,6 +86,7 @@ async def download_mp3(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def main():
+        threading.Thread(target=start_health_server, daemon=True).start()
     if not TOKEN:
         raise RuntimeError("BOT_TOKEN is missing")
 
